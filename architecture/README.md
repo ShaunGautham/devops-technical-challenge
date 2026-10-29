@@ -1,18 +1,14 @@
-# Architecture diagram source and exports
+# Architecture diagrams
 
-The diagrams are maintained as editable Mermaid source files and committed
-with SVG exports:
+`solution.svg` is a four-block overview of the solution. Its blocks separate:
 
-- `solution.mmd` → `solution.svg`: GCP resources, Kubernetes traffic and
-  objects, application GitOps flow, and Terraform workflow boundary.
-- `repository-structure.mmd` → `repository-structure.svg`: repository layout
-  and the purpose of each area.
+1. Terraform-defined GCP infrastructure and resource connections.
+2. Kubernetes workload objects and the user traffic path.
+3. Application CI from a source change through image publishing and Argo CD rollout.
+4. Repository folders and their purpose.
 
-When editing a diagram, update its `.mmd` source and export the matching SVG
-from a Mermaid-compatible editor or renderer. Review the SVG after export to
-confirm labels and arrows remain legible and match the source. Keep the diagrams
-aligned with Terraform, Kubernetes manifests, and GitHub Actions workflows.
+`solution.mmd` is the editable Mermaid source for that overview. `repository-structure.mmd` and `repository-structure.svg` provide a larger standalone view of the repository layout.
 
-The solution diagram describes the intended Terraform-managed architecture.
-The assignment does not require applying Terraform or deploying to a real
-cluster.
+The diagrams describe the configuration in this repository. Terraform resources are not deployed for the assignment. The Terraform state bucket is a prerequisite and is not the log-export bucket. The current Ingress has no TLS configuration, so the traffic block does not claim HTTPS.
+
+Update the Mermaid source and SVG together when the architecture changes. Check that labels and arrows remain legible and match Terraform, Kubernetes manifests, and GitHub Actions workflows.

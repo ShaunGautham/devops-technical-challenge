@@ -1,74 +1,34 @@
-flowchart LR
-  user[Internet user]
-
-  subgraph GCP[GCP project — Terraform-defined; not applied for this assignment]
-    lb[GKE-managed external load balancer<br/>created by the Ingress controller]
-    subgraph NET[Custom VPC and regional subnet]
-      podrange[Secondary range: GKE Pods]
-      svcrange[Secondary range: Kubernetes Services]
-
-      subgraph GKE[Regional GKE cluster<br/>Workload Identity enabled]
-        nodes[GKE node pool<br/>autoscaling 1–2 nodes total<br/>dedicated node service account]
-        ingress[Ingress resource<br/>class gce]
-        service[Service<br/>ClusterIP :3000]
-
-        subgraph PROD[Namespace: production]
-          deployment[Deployment<br/>2 replicas; rolling update]
-          pods[Next.js Pods<br/>UID 1001; limits; probes at /api/health]
-          hpa[HPA<br/>2–5 replicas; CPU 70%]
-          pdb[PDB<br/>minAvailable: 1]
-          deployment --> pods
-          hpa -. scales .-> deployment
-          pdb -. protects availability .-> pods
-        end
-
-        subgraph ARGO[Namespace: argocd]
-          app[Argo CD controller + Application<br/>Helmfile install; Application bootstrapped once]
-        end
-
-        ingress --> service --> deployment
-        nodes -. schedules .-> pods
-        app -->|reconcile via Kubernetes API| deployment
-      end
-    end
-
-    registry[Private Artifact Registry<br/>hello-world-production]
-    registry -->|pull image by commit SHA<br/>repository-scoped Reader role defined in Terraform| nodes
-
-    cloudlogs[Cloud Logging<br/>GKE container logs]
-    sink[Project logging sink<br/>k8s_container filter]
-    bucket[GCS log bucket<br/>uniform access; public access blocked<br/>versioning; 90-day lifecycle]
-    pods --> cloudlogs --> sink --> bucket
+flowchart TB
+  subgraph INFRA["1 · Infrastructure · Terraform-defined GCP resources"]
+    direction LR
+    tf["Terraform<br/>infra/"] --> vpc["Custom VPC + subnet<br/>Pod and Service ranges"] --> gke["Regional GKE cluster"] --> nodes["Node pool<br/>1–2 nodes total"]
+    gar["Artifact Registry"] -->|"nodes pull image"| nodes
+    gke --> logs["Cloud Logging"] --> sink["Log sink"] --> bucket["GCS log bucket"]
+    state["Pre-created GCS<br/>Terraform state bucket"] -. "backend" .-> tf
   end
 
-  user -->|HTTP| lb --> ingress
-
-  subgraph DELIVERY[Application delivery]
-    git[GitHub repository<br/>main branch]
-    actions[GitHub Actions<br/>PR: lint, build, Kustomize preview<br/>main: build, Trivy scan, publish]
-    image[Container image<br/>HIGH/CRITICAL scan gate<br/>tagged with full commit SHA]
-    git --> actions --> image
-    actions -->|commit newName/newTag<br/>to production Kustomize overlay| git
-    git -->|Argo CD reads watched path<br/>k8s/overlays/production| app
+  subgraph K8S["2 · Kubernetes · workload and traffic"]
+    direction LR
+    user["User"] --> lb["GKE-managed<br/>load balancer"] --> ing["Ingress<br/>route /"] --> svc["ClusterIP Service<br/>port 3000"] --> deploy["Deployment<br/>2 replicas; rolling update"] --> pods["Ready Pods"]
+    hpa["HPA<br/>2–5 Pods; CPU 70%"] -. "scales" .-> deploy
+    pdb["PDB<br/>minAvailable: 1"] -. "limits voluntary disruption" .-> pods
   end
 
-  image -->|push via Workload Identity Federation| registry
-
-  subgraph INFRA_CI[Infrastructure workflow]
-    terraform[infra/ Terraform]
-    checks[PR: fmt, init, validate,<br/>conditional plan]
-    gatedapply[main push: apply disabled by default<br/>enable only with remote state<br/>and protected production-deployment environment]
-    terraform --> checks
-    terraform --> gatedapply
-    checks -->|WIF-authenticated plan| GCP
-    gatedapply -->|WIF-authenticated apply| GCP
+  subgraph PIPE["3 · Application pipeline · source change to rollout"]
+    direction LR
+    change["Change pushed to main"] --> ci["GitHub Actions<br/>install · lint · build"] --> image["Build image<br/>full Git SHA"] --> scan["Trivy scan<br/>HIGH / CRITICAL gate"] --> publish["Push to Artifact Registry"] --> update["Kustomize updates<br/>production image"] --> commit["Commit image SHA<br/>to Git"] --> argo["Argo CD watches<br/>production overlay"] --> rollout["Kubernetes<br/>rollout"]
   end
 
-  classDef external fill:#fff7e6,stroke:#b7791f,color:#142333
-  classDef control fill:#edf4ff,stroke:#376887,color:#142333
-  classDef workload fill:#eef8f1,stroke:#3b8050,color:#142333
-  classDef caveat fill:#fff0ef,stroke:#b5473a,color:#142333
-  class lb,user,git,actions,image external
-  class app,ingress,service,hpa,pdb,terraform,checks control
-  class deployment,pods,nodes,registry,cloudlogs,sink,bucket workload
-  class gatedapply caveat
+  subgraph REPO["4 · Repository · files and purpose"]
+    direction LR
+    root["Repository root"]
+    root --> app["application/<br/>Next.js + Dockerfile"]
+    root --> infrafiles["infra/<br/>Terraform"]
+    root --> k8s["k8s/"]
+    k8s --> base["base/<br/>Deployment + Service"]
+    k8s --> overlay["overlays/production/<br/>Ingress · HPA · PDB · image"]
+    k8s --> argofiles["argocd/<br/>Helmfile + Application"]
+    root --> workflows[".github/workflows/<br/>App + Terraform CI"]
+    root --> docs["README · ARCHITECTURE · architecture/"]
+    root --> compose["docker-compose.yml + .env.example<br/>local run path"]
+  end
