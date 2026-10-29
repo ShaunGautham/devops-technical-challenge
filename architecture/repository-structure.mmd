@@ -1,0 +1,14 @@
+flowchart TD
+  root[devops-technical-challenge/<br/>Separate app, infrastructure, deployment, and documentation]
+
+  root --> app[application/<br/>Next.js app, Dockerfile, lockfile<br/>Self-contained image build context]
+  root --> infra[infra/<br/>Terraform for GCP<br/>Reviewable infrastructure as code]
+  root --> k8s[k8s/<br/>Kubernetes desired state]
+  root --> workflows[.github/workflows/<br/>App CI and Terraform CI/CD]
+  root --> architecture[architecture/<br/>Editable diagrams and SVG exports]
+  root --> docs[README.md + ARCHITECTURE.md<br/>Runbook, design rationale, limitations]
+  root --> compose[docker-compose.yml + .env.example<br/>Local run path; no secrets]
+
+  k8s --> base[k8s/base/<br/>Shared Deployment and Service<br/>Reusable workload defaults]
+  k8s --> production[k8s/overlays/production/<br/>Ingress, HPA, PDB, Namespace, image tag<br/>Environment-specific settings]
+  k8s --> argocd[k8s/argocd/<br/>Helmfile install and Argo CD Application<br/>One-time bootstrap plus ongoing GitOps]

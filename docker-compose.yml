@@ -1,0 +1,12 @@
+services:
+  web:
+    build:
+      context: ./application
+      dockerfile: Dockerfile
+    image: hello-world-nextjs:local
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true

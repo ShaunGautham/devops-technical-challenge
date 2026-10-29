@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320" role="img" aria-labelledby="title desc">
+  <title id="title">DevOps challenge target architecture</title>
+  <desc id="desc">A clear view of the Terraform-defined GCP and GKE architecture, Kubernetes traffic flow, application CI and GitOps deployment, and infrastructure workflow. Resources are not applied.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,8 L9,4 z" fill="#526579"/></marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,8 L9,4 z" fill="#315f9c"/></marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,8 L9,4 z" fill="#39734a"/></marker>
+  </defs>
+  <style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#172b3a;font-size:17px}
+    .title{font-size:32px;font-weight:700;letter-spacing:.2px}.subtitle{font-size:16px;fill:#526579}
+    .section-title{font-size:22px;font-weight:700}.card-title{font-size:18px;font-weight:700}
+    .small{font-size:14px;fill:#526579}.tiny{font-size:13px;fill:#526579}
+    .panel{fill:#fbfcfe;stroke:#c5d0da;stroke-width:2;rx:18}
+    .boundary{fill:#f7faff;stroke:#879eb1;stroke-width:2;stroke-dasharray:9 6;rx:16}
+    .cluster{fill:#f1f6fc;stroke:#47708e;stroke-width:2;rx:15}
+    .k8s{fill:#fff;stroke:#5a7da0;stroke-width:2;rx:11}
+    .cloud{fill:#eff8f1;stroke:#548363;stroke-width:2;rx:11}
+    .external{fill:#fff7e9;stroke:#b7791f;stroke-width:2;rx:11}
+    .caveat{fill:#fff1ef;stroke:#ba6459;stroke-width:2;rx:11}
+    .edge{stroke:#526579;stroke-width:2.5;fill:none;marker-end:url(#arrow);stroke-linecap:round;stroke-linejoin:round}
+    .blue{stroke:#315f9c;stroke-width:2.5;fill:none;marker-end:url(#arrowBlue);stroke-linecap:round;stroke-linejoin:round}
+    .green{stroke:#39734a;stroke-width:2.5;fill:none;marker-end:url(#arrowGreen);stroke-linecap:round;stroke-linejoin:round}
+    .dash{stroke-dasharray:8 6}.divider{stroke:#d8e0e7;stroke-width:1.5}
+    .label{font-size:13px;font-weight:600;fill:#526579}
+  </style>
+
+  <rect width="1800" height="1320" fill="#ffffff"/>
+  <text x="48" y="55" class="title">DevOps challenge | target architecture</text>
+  <text x="48" y="84" class="subtitle">Reflects the repository configuration. Terraform describes these resources; the assignment environment has not been deployed.</text>
+
+  <!-- Runtime and cloud resources -->
+  <rect x="40" y="112" width="1720" height="620" class="panel"/>
+  <text x="70" y="151" class="section-title">1. Runtime architecture · GCP project · asia-southeast1</text>
+  <text x="70" y="177" class="small">Terraform-defined network, regional GKE cluster, private image registry, and centralized log storage</text>
+
+  <rect x="250" y="202" width="970" height="492" class="boundary"/>
+  <text x="278" y="236" class="card-title">Custom VPC · regional subnet</text>
+  <text x="278" y="260" class="small">GKE secondary ranges · Pods 10.20.0.0/16 · Services 10.21.0.0/20</text>
+
+  <rect x="285" y="280" width="900" height="385" class="cluster"/>
+  <text x="315" y="316" class="card-title">Regional GKE cluster</text>
+  <text x="315" y="340" class="small">Workload Identity enabled · node pool autoscaling 1–2 · namespaces: production, argocd</text>
+
+  <!-- User to workload path -->
+  <rect x="65" y="370" width="150" height="88" class="external"/>
+  <text x="140" y="405" text-anchor="middle" class="card-title">Internet user</text>
+  <text x="140" y="431" text-anchor="middle" class="small">HTTPS request</text>
+
+  <rect x="320" y="375" width="170" height="84" class="external"/>
+  <text x="405" y="408" text-anchor="middle" class="card-title">External load balancer</text>
+  <text x="405" y="434" text-anchor="middle" class="small">GKE Ingress controller</text>
+
+  <rect x="535" y="375" width="140" height="84" class="k8s"/>
+  <text x="605" y="408" text-anchor="middle" class="card-title">Ingress</text>
+  <text x="605" y="434" text-anchor="middle" class="small">class: gce</text>
+
+  <rect x="720" y="375" width="140" height="84" class="k8s"/>
+  <text x="790" y="408" text-anchor="middle" class="card-title">Service</text>
+  <text x="790" y="434" text-anchor="middle" class="small">ClusterIP :3000</text>
+
+  <rect x="905" y="375" width="230" height="84" class="k8s"/>
+  <text x="1020" y="408" text-anchor="middle" class="card-title">Deployment</text>
+  <text x="1020" y="434" text-anchor="middle" class="small">2 replicas · rolling update</text>
+
+  <path d="M215 414 H320" class="edge"/>
+  <path d="M490 417 H535" class="edge"/>
+  <path d="M675 417 H720" class="edge"/>
+  <path d="M860 417 H905" class="edge"/>
+
+  <rect x="905" y="510" width="230" height="92" class="k8s"/>
+  <text x="1020" y="544" text-anchor="middle" class="card-title">Next.js Pods</text>
+  <text x="1020" y="568" text-anchor="middle" class="small">UID 1001 · health probes</text>
+  <text x="1020" y="588" text-anchor="middle" class="small">CPU / memory requests and limits</text>
+  <path d="M1020 459 V510" class="edge"/>
+
+  <rect x="320" y="520" width="205" height="76" class="k8s"/>
+  <text x="422" y="551" text-anchor="middle" class="card-title">HPA</text>
+  <text x="422" y="576" text-anchor="middle" class="small">2–5 replicas · CPU 70%</text>
+  <path d="M525 558 H570 V481 H1020 V459" class="blue dash"/>
+  <text x="626" y="500" class="label">scales Deployment</text>
+
+  <rect x="595" y="520" width="205" height="76" class="k8s"/>
+  <text x="697" y="551" text-anchor="middle" class="card-title">Pod disruption budget</text>
+  <text x="697" y="576" text-anchor="middle" class="small">minAvailable: 1</text>
+  <path d="M800 558 H850 V602 H905" class="blue dash"/>
+
+  <rect x="320" y="615" width="480" height="54" class="k8s"/>
+  <text x="340" y="639" class="card-title">Argo CD · namespace argocd</text>
+  <text x="340" y="659" class="tiny">Helmfile install · Application bootstrapped once · auto-sync, self-heal, prune</text>
+  <path d="M800 642 H860 V485 H1020 V459" class="blue"/>
+
+  <!-- Cloud services column -->
+  <rect x="1260" y="202" width="465" height="492" fill="#f8fbf8" stroke="#c6d6ca" stroke-width="2" rx="16"/>
+  <text x="1290" y="236" class="card-title">Managed cloud services</text>
+
+  <rect x="1300" y="265" width="385" height="96" class="cloud"/>
+  <text x="1492" y="301" text-anchor="middle" class="card-title">Artifact Registry</text>
+  <text x="1492" y="328" text-anchor="middle" class="small">hello-world-production · private</text>
+  <text x="1492" y="349" text-anchor="middle" class="tiny">GKE nodes pull image tagged with commit SHA</text>
+  <path d="M1300 316 H1238 V350 H1185" class="green"/>
+  <text x="1192" y="338" class="label">image pull</text>
+
+  <rect x="1300" y="393" width="385" height="70" class="cloud"/>
+  <text x="1492" y="423" text-anchor="middle" class="card-title">Cloud Logging</text>
+  <text x="1492" y="447" text-anchor="middle" class="small">GKE container logs</text>
+  <rect x="1300" y="488" width="385" height="70" class="cloud"/>
+  <text x="1492" y="518" text-anchor="middle" class="card-title">Project logging sink</text>
+  <text x="1492" y="542" text-anchor="middle" class="small">resource.type = k8s_container</text>
+  <rect x="1300" y="583" width="385" height="83" class="cloud"/>
+  <text x="1492" y="613" text-anchor="middle" class="card-title">GCS log bucket</text>
+  <text x="1492" y="638" text-anchor="middle" class="small">uniform access · public access prevention</text>
+  <text x="1492" y="658" text-anchor="middle" class="tiny">object versioning · 90-day lifecycle</text>
+  <path d="M1135 558 H1240 V428 H1300" class="edge"/>
+  <text x="1190" y="414" class="label">container logs</text>
+  <path d="M1492 463 V488" class="edge"/>
+  <path d="M1492 558 V583" class="edge"/>
+
+  <!-- Application delivery -->
+  <rect x="40" y="765" width="1120" height="500" class="panel"/>
+  <text x="70" y="806" class="section-title">2. Application CI and GitOps delivery</text>
+  <text x="70" y="833" class="small">A source change produces an immutable image and a Git commit that Argo CD reconciles.</text>
+
+  <rect x="80" y="885" width="205" height="104" class="external"/>
+  <text x="182" y="922" text-anchor="middle" class="card-title">GitHub repository</text>
+  <text x="182" y="949" text-anchor="middle" class="small">application + manifests</text>
+  <text x="182" y="972" text-anchor="middle" class="small">main branch</text>
+
+  <rect x="365" y="885" width="250" height="104" class="external"/>
+  <text x="490" y="922" text-anchor="middle" class="card-title">GitHub Actions</text>
+  <text x="490" y="949" text-anchor="middle" class="small">PR: lint, build, preview</text>
+  <text x="490" y="972" text-anchor="middle" class="small">main: build and publish</text>
+
+  <rect x="700" y="885" width="190" height="104" class="cloud"/>
+  <text x="795" y="922" text-anchor="middle" class="card-title">Build image</text>
+  <text x="795" y="949" text-anchor="middle" class="small">tagged with full</text>
+  <text x="795" y="972" text-anchor="middle" class="small">commit SHA</text>
+
+  <rect x="950" y="885" width="170" height="104" class="external"/>
+  <text x="1035" y="922" text-anchor="middle" class="card-title">Update overlay</text>
+  <text x="1035" y="949" text-anchor="middle" class="small">Kustomize</text>
+  <text x="1035" y="972" text-anchor="middle" class="small">newName + newTag</text>
+
+  <path d="M285 937 H365" class="edge"/>
+  <path d="M615 937 H700" class="edge"/>
+  <path d="M890 937 H950" class="edge"/>
+  <text x="790" y="1018" text-anchor="middle" class="tiny">Workload Identity Federation authenticates CI to GCP; no long-lived key.</text>
+
+  <path d="M795 885 V850 H1492 V361" class="green dash"/>
+  <rect x="115" y="1060" width="970" height="70" fill="#f4f7fa" stroke="#d0dae3" stroke-width="1.5" rx="10"/>
+  <text x="600" y="1088" text-anchor="middle" class="card-title">GitOps reconciliation</text>
+  <text x="600" y="1113" text-anchor="middle" class="small">CI commits the SHA update to main → Argo CD watches k8s/overlays/production → Kubernetes applies desired state</text>
+  <path d="M1035 989 H1140 V710 H820 V642 H800" class="blue"/>
+
+  <text x="70" y="1200" class="small">Rollback: revert the image-tag commit. The current configure-ci tag is a placeholder until CI publishes the first SHA-tagged image.</text>
+  <text x="70" y="1230" class="tiny">Registry access note: the GKE node identity needs Artifact Registry Reader; that IAM binding is not currently defined in Terraform.</text>
+
+  <!-- Infrastructure workflow -->
+  <rect x="1190" y="765" width="570" height="500" class="panel"/>
+  <text x="1220" y="806" class="section-title">3. Infrastructure workflow</text>
+  <text x="1220" y="833" class="small">Terraform changes are reviewed separately from app releases.</text>
+  <rect x="1230" y="885" width="490" height="120" class="k8s"/>
+  <text x="1475" y="922" text-anchor="middle" class="card-title">Pull request checks</text>
+  <text x="1475" y="951" text-anchor="middle" class="small">fmt · init · validate · conditional plan</text>
+  <text x="1475" y="979" text-anchor="middle" class="small">WIF-authenticated plan · no resource creation</text>
+  <rect x="1230" y="1045" width="490" height="130" class="caveat"/>
+  <text x="1475" y="1082" text-anchor="middle" class="card-title">Main branch apply job</text>
+  <text x="1475" y="1111" text-anchor="middle" class="small">WIF-authenticated Terraform apply</text>
+  <text x="1475" y="1138" text-anchor="middle" class="small">Use only after configuring protected environment</text>
+  <text x="1475" y="1161" text-anchor="middle" class="small">and remote state; not run for this submission</text>
+  <path d="M1475 1005 V1045" class="edge"/>
+  <text x="1220" y="1215" class="tiny">GCP resources shown above are Terraform targets, not deployed resources.</text>
+</svg>

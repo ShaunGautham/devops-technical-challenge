@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-world-nextjs
+  labels:
+    app: hello-world-nextjs
+spec:
+  selector:
+    app: hello-world-nextjs
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP
+  type: ClusterIP

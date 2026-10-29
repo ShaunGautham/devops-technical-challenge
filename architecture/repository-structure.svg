@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">DevOps challenge repository structure</title>
+  <desc id="desc">Repository folders and the role each plays in the application, infrastructure, GitOps deployment, and documentation.</desc>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#526579"/></marker></defs>
+  <style>
+    text{font:16px Arial,sans-serif;fill:#142333}.title{font-size:28px;font-weight:bold}.root{fill:#eaf1fa;stroke:#315f9c;stroke-width:2.5;rx:14}
+    .box{fill:#f3f7fb;stroke:#376887;stroke-width:2;rx:12}.child{fill:#f8fbff;stroke:#7893aa;stroke-width:1.5;rx:10}
+    .edge{stroke:#526579;stroke-width:2;fill:none;marker-end:url(#arrow)}.head{font-weight:bold;font-size:18px}.sub{font-size:14px;fill:#526579}
+  </style>
+  <text x="45" y="48" class="title">Repository structure and purpose</text>
+  <rect x="400" y="75" width="400" height="65" class="root"/>
+  <text x="600" y="115" text-anchor="middle" class="head">devops-technical-challenge/</text>
+
+  <path d="M600 140 V170 H145 V205 M600 170 H450 V205 M600 170 H755 V205 M600 170 H1055 V205" class="edge"/>
+  <rect x="35" y="205" width="220" height="120" class="box"/>
+  <text x="145" y="240" text-anchor="middle" class="head">application/</text>
+  <text x="145" y="270" text-anchor="middle">Next.js app + Dockerfile</text><text x="145" y="296" text-anchor="middle" class="sub">Self-contained image build context</text>
+  <rect x="340" y="205" width="220" height="120" class="box"/>
+  <text x="450" y="240" text-anchor="middle" class="head">infra/</text>
+  <text x="450" y="270" text-anchor="middle">GCP Terraform</text><text x="450" y="296" text-anchor="middle" class="sub">Reviewable infrastructure as code</text>
+  <rect x="645" y="205" width="220" height="120" class="box"/>
+  <text x="755" y="240" text-anchor="middle" class="head">k8s/</text>
+  <text x="755" y="270" text-anchor="middle">Kubernetes desired state</text><text x="755" y="296" text-anchor="middle" class="sub">Shared base + production overlay</text>
+  <rect x="945" y="205" width="220" height="120" class="box"/>
+  <text x="1055" y="240" text-anchor="middle" class="head">.github/workflows/</text>
+  <text x="1055" y="270" text-anchor="middle">App and Terraform CI</text><text x="1055" y="296" text-anchor="middle" class="sub">Automated checks and delivery</text>
+
+  <path d="M755 325 V365 H395 V400 M755 365 H780 V400 M865 325 V350 H1180 V597 H1215" class="edge"/>
+  <rect x="235" y="400" width="320" height="115" class="child"/>
+  <text x="395" y="435" text-anchor="middle" class="head">k8s/base/</text>
+  <text x="395" y="465" text-anchor="middle">Reusable Deployment and Service</text><text x="395" y="491" text-anchor="middle" class="sub">Common workload defaults</text>
+  <rect x="620" y="400" width="320" height="115" class="child"/>
+  <text x="780" y="435" text-anchor="middle" class="head">k8s/overlays/production/</text>
+  <text x="780" y="465" text-anchor="middle">Ingress, HPA, PDB, image tag</text><text x="780" y="491" text-anchor="middle" class="sub">Environment-specific settings</text>
+  <rect x="895" y="540" width="320" height="115" class="child"/>
+  <text x="1055" y="575" text-anchor="middle" class="head">k8s/argocd/</text>
+  <text x="1055" y="605" text-anchor="middle">Helmfile and Application</text><text x="1055" y="631" text-anchor="middle" class="sub">One-time bootstrap; ongoing GitOps</text>
+
+  <path d="M600 140 V540 H210 V575 M600 540 H500 V575 M600 540 H785 V575" class="edge"/>
+  <rect x="55" y="575" width="310" height="95" class="box"/>
+  <text x="210" y="610" text-anchor="middle" class="head">architecture/</text><text x="210" y="640" text-anchor="middle" class="sub">Editable diagrams + SVG exports</text>
+  <rect x="400" y="575" width="200" height="95" class="box"/>
+  <text x="500" y="610" text-anchor="middle" class="head">README.md</text><text x="500" y="640" text-anchor="middle" class="sub">Runbook and setup</text>
+  <rect x="685" y="575" width="200" height="95" class="box"/>
+  <text x="785" y="610" text-anchor="middle" class="head">ARCHITECTURE.md</text><text x="785" y="640" text-anchor="middle" class="sub">Design and trade-offs</text>
+  <text x="45" y="702" class="sub">docker-compose.yml and .env.example provide the local run path without storing secrets.</text>
+</svg>

@@ -1,0 +1,74 @@
+flowchart LR
+  user[Internet user]
+
+  subgraph GCP[GCP project — Terraform-defined; not applied for this assignment]
+    lb[GKE-managed external load balancer<br/>created by the Ingress controller]
+    subgraph NET[Custom VPC and regional subnet]
+      podrange[Secondary range: GKE Pods]
+      svcrange[Secondary range: Kubernetes Services]
+
+      subgraph GKE[Regional GKE cluster<br/>Workload Identity enabled]
+        nodes[GKE node pool<br/>autoscaling 1–2 nodes]
+        ingress[Ingress resource<br/>class gce]
+        service[Service<br/>ClusterIP :3000]
+
+        subgraph PROD[Namespace: production]
+          deployment[Deployment<br/>2 replicas; rolling update]
+          pods[Next.js Pods<br/>UID 1001; limits; probes at /api/health]
+          hpa[HPA<br/>2–5 replicas; CPU 70%]
+          pdb[PDB<br/>minAvailable: 1]
+          deployment --> pods
+          hpa -. scales .-> deployment
+          pdb -. protects availability .-> pods
+        end
+
+        subgraph ARGO[Namespace: argocd]
+          app[Argo CD controller + Application<br/>Helmfile install; Application bootstrapped once]
+        end
+
+        ingress --> service --> deployment
+        nodes -. schedules .-> pods
+        app -->|reconcile via Kubernetes API| deployment
+      end
+    end
+
+    registry[Private Artifact Registry<br/>hello-world-production]
+    registry -->|pull image by commit SHA<br/>requires Artifact Registry Reader IAM| nodes
+
+    cloudlogs[Cloud Logging<br/>GKE container logs]
+    sink[Project logging sink<br/>k8s_container filter]
+    bucket[GCS log bucket<br/>uniform access; public access blocked<br/>versioning; 90-day lifecycle]
+    pods --> cloudlogs --> sink --> bucket
+  end
+
+  user -->|HTTP| lb --> ingress
+
+  subgraph DELIVERY[Application delivery]
+    git[GitHub repository<br/>main branch]
+    actions[GitHub Actions<br/>PR: lint, build, Kustomize preview<br/>main: build and publish]
+    image[Container image<br/>tagged with full commit SHA]
+    git --> actions --> image
+    actions -->|commit newName/newTag<br/>to production Kustomize overlay| git
+    git -->|Argo CD reads watched path<br/>k8s/overlays/production| app
+  end
+
+  image -->|push via Workload Identity Federation| registry
+
+  subgraph INFRA_CI[Infrastructure workflow]
+    terraform[infra/ Terraform]
+    checks[PR: fmt, init, validate,<br/>conditional plan]
+    gatedapply[main push: apply job<br/>requires protected production environment<br/>and remote state before use]
+    terraform --> checks
+    terraform --> gatedapply
+    checks -->|WIF-authenticated plan| GCP
+    gatedapply -->|WIF-authenticated apply| GCP
+  end
+
+  classDef external fill:#fff7e6,stroke:#b7791f,color:#142333
+  classDef control fill:#edf4ff,stroke:#376887,color:#142333
+  classDef workload fill:#eef8f1,stroke:#3b8050,color:#142333
+  classDef caveat fill:#fff0ef,stroke:#b5473a,color:#142333
+  class lb,user,git,actions,image external
+  class app,ingress,service,hpa,pdb,terraform,checks control
+  class deployment,pods,nodes,registry,cloudlogs,sink,bucket workload
+  class gatedapply caveat
