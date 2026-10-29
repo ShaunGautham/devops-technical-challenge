@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     
     # 🔍 Rule 2: Forces GitHub to pause and wait for a manual click before starting
-    environment: production 
+    environment: production-deployment
     
     steps:
       - uses: actions/checkout@v4
