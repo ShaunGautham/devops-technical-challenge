@@ -79,9 +79,9 @@ jobs:
           load: true  # 📦 Exports the image layers directly to the runner's Docker engine
           tags: ${{ env.IMAGE_URI }}:${{ github.sha }}
       
-      # 🛡️ Step 2: Scan the local image context before it leaves the workspace
+      # 🛡️ Step 2: Scan the local image context before it leaves the workspace(Trivy pinned to v0.36.0)
       - name: Run Vulnerability Scanner (Trivy)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: '${{ env.IMAGE_URI }}:${{ github.sha }}'
           format: 'table'
