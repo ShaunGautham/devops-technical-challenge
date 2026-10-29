@@ -8,7 +8,7 @@ flowchart LR
       svcrange[Secondary range: Kubernetes Services]
 
       subgraph GKE[Regional GKE cluster<br/>Workload Identity enabled]
-        nodes[GKE node pool<br/>autoscaling 1–2 nodes]
+        nodes[GKE node pool<br/>autoscaling 1–2 nodes total<br/>dedicated node service account]
         ingress[Ingress resource<br/>class gce]
         service[Service<br/>ClusterIP :3000]
 
@@ -33,7 +33,7 @@ flowchart LR
     end
 
     registry[Private Artifact Registry<br/>hello-world-production]
-    registry -->|pull image by commit SHA<br/>requires Artifact Registry Reader IAM| nodes
+    registry -->|pull image by commit SHA<br/>repository-scoped Reader role defined in Terraform| nodes
 
     cloudlogs[Cloud Logging<br/>GKE container logs]
     sink[Project logging sink<br/>k8s_container filter]
@@ -45,8 +45,8 @@ flowchart LR
 
   subgraph DELIVERY[Application delivery]
     git[GitHub repository<br/>main branch]
-    actions[GitHub Actions<br/>PR: lint, build, Kustomize preview<br/>main: build and publish]
-    image[Container image<br/>tagged with full commit SHA]
+    actions[GitHub Actions<br/>PR: lint, build, Kustomize preview<br/>main: build, Trivy scan, publish]
+    image[Container image<br/>HIGH/CRITICAL scan gate<br/>tagged with full commit SHA]
     git --> actions --> image
     actions -->|commit newName/newTag<br/>to production Kustomize overlay| git
     git -->|Argo CD reads watched path<br/>k8s/overlays/production| app
@@ -57,7 +57,7 @@ flowchart LR
   subgraph INFRA_CI[Infrastructure workflow]
     terraform[infra/ Terraform]
     checks[PR: fmt, init, validate,<br/>conditional plan]
-    gatedapply[main push: apply job<br/>requires protected production environment<br/>and remote state before use]
+    gatedapply[main push: apply disabled by default<br/>enable only with remote state<br/>and protected production-deployment environment]
     terraform --> checks
     terraform --> gatedapply
     checks -->|WIF-authenticated plan| GCP

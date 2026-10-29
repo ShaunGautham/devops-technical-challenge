@@ -80,7 +80,7 @@ resource "google_container_cluster" "primary" {
 
   # Create a separate node pool instead of keeping the default one.
   remove_default_node_pool = true
-  initial_node_count       = var.node_count
+  initial_node_count       = 1
 
   # Allows Terraform to delete the cluster if needed.
   deletion_protection = false
@@ -100,14 +100,23 @@ resource "google_container_cluster" "primary" {
 }
 
 resource "google_service_account" "gke_nodes" {
-  account_id   = "${var.name_prefix}-${var.environment}-gke-nodes"
+  # Include the environment and keep this immutable ID below 30 characters.
+  account_id   = "gke-nodes-${var.environment}"
   display_name = "GKE node pool service account"
 }
 
-resource "google_project_iam_member" "gke_nodes_artifact_reader" {
+resource "google_project_iam_member" "gke_nodes_default_role" {
   project = var.project_id
-  role    = "roles/artifactregistry.reader"
+  role    = "roles/container.defaultNodeServiceAccount"
   member  = "serviceAccount:${google_service_account.gke_nodes.email}"
+}
+
+resource "google_artifact_registry_repository_iam_member" "gke_nodes_artifact_reader" {
+  project    = var.project_id
+  location   = google_artifact_registry_repository.docker.location
+  repository = google_artifact_registry_repository.docker.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.gke_nodes.email}"
 }
 
 
@@ -115,13 +124,16 @@ resource "google_container_node_pool" "primary" {
   name     = "${var.name_prefix}-${var.environment}-node-pool"
   location = var.region
   cluster  = google_container_cluster.primary.name
+
   depends_on = [
-  google_project_iam_member.gke_nodes_artifact_reader
- ]
+    google_project_iam_member.gke_nodes_default_role,
+    google_project_iam_member.gke_nodes_artifact_reader,
+  ]
 
   autoscaling {
-    min_node_count = 1
-    max_node_count = 2
+    # These limits are totals across the regional node pool, not per zone.
+    total_min_node_count = 1
+    total_max_node_count = 2
   }
 
   management {
@@ -130,9 +142,9 @@ resource "google_container_node_pool" "primary" {
   }
 
   node_config {
-    machine_type = var.machine_type
-    disk_size_gb = 30
-    disk_type    = "pd-standard"
+    machine_type    = var.machine_type
+    disk_size_gb    = 30
+    disk_type       = "pd-standard"
     service_account = google_service_account.gke_nodes.email
 
     oauth_scopes = [

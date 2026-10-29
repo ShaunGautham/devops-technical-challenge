@@ -3,5 +3,4 @@ project_id   = "devops"
 region       = "asia-southeast1"
 environment  = "production"
 name_prefix  = "hello-world"
-node_count   = 1
 machine_type = "e2-medium"

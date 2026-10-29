@@ -12,15 +12,16 @@ deployment.
 Terraform in `infra/` defines a custom VPC and regional subnet in
 `asia-southeast1`, with separate secondary ranges for GKE Pods and Services. It
 defines a regional GKE cluster and a separate autoscaling node pool. The node
-pool is configured for one to two nodes, automatic repair and upgrade, and GKE
-metadata for Workload Identity.
+pool is configured for one to two nodes total across the region, automatic
+repair and upgrade, and GKE metadata for Workload Identity.
 
 Terraform also defines a private Artifact Registry repository named
 `hello-world-production`. GitHub Actions pushes the application image to this
-repository using Workload Identity Federation. GKE nodes then pull the referenced
-image; the node identity must have Artifact Registry Reader access. That IAM grant
-is an environment prerequisite and is not separately defined in the current
-Terraform configuration.
+repository using a narrowly scoped Workload Identity Federation identity. GKE
+nodes use a dedicated service account with Artifact Registry Reader and GKE's
+default node service-account role. The service-account ID is kept within
+Google's naming limit. The Terraform execution identity is separate from the
+application publishing identity and must be allowed to attach the node account.
 
 GKE container logs are selected by a Cloud Logging project sink and exported to
 a GCS bucket. The bucket enables uniform bucket-level access, public access
@@ -35,7 +36,9 @@ GKE Ingress controller from the `Ingress` resource. The Ingress routes to the
 the `Deployment` in namespace `production`.
 
 The Deployment starts with two replicas and uses a rolling update with
-`maxUnavailable: 0` and `maxSurge: 1`. The production overlay adds an HPA that
+`maxUnavailable: 0` and `maxSurge: 1`. This keeps old replicas available until
+replacements pass readiness checks; one temporary extra Pod provides rollout
+capacity. The production overlay adds an HPA that
 can scale between two and five replicas at 70% average CPU utilization, and a
 PDB that requests at least one available Pod during voluntary disruptions. The
 HPA needs a working cluster metrics source. Readiness and liveness probes call
@@ -63,32 +66,32 @@ application release, revert the commit that changed the image tag.
 
 On pull requests, `.github/workflows/app-ci.yaml` installs the locked Node
 dependencies, runs lint and build, and previews the production Kustomize
-manifests. On a push to `main`, it authenticates to Google Cloud using Workload
-Identity Federation, builds the Docker image, and pushes it to Artifact Registry
-with the full source commit SHA as the tag. It then uses `kustomize edit set
-image` to update `newName` and `newTag` in
-`k8s/overlays/production/kustomization.yaml` and commits that change to Git.
+manifests. On a push to `main`, it authenticates to Google Cloud using the app
+publishing Workload Identity Federation identity, builds the Docker image, scans
+for HIGH and CRITICAL vulnerabilities, then pushes it to Artifact Registry with
+the full source commit SHA as the tag. It uses `kustomize edit set image` to
+update `newName` and `newTag` in `k8s/overlays/production/kustomization.yaml`,
+renders the updated manifests, and commits the change to Git.
 
-Argo CD reads that Git commit and reconciles the cluster. CI does not hold
-Kubernetes credentials and does not run `kubectl`. Kubernetes pulls the image
-from Artifact Registry and rolls out the updated Deployment. The starting
+Argo CD reads that Git commit and reconciles the cluster. The GitHub built-in
+`GITHUB_TOKEN` push does not trigger a second workflow run; the generated overlay
+is validated in the original publish run. CI does not hold Kubernetes
+credentials and does not apply manifests to the cluster. Kubernetes pulls the
+image from Artifact Registry and rolls out the updated Deployment. The starting
 `configure-ci` tag in the overlay is a placeholder; a successful first image
 publish must replace it before the application can start successfully.
 
 ## Infrastructure workflow and deployment boundary
 
 `.github/workflows/infra-ci.yaml` runs Terraform formatting, initialization,
-and validation on infrastructure changes. When the GCP identity variables are
-configured, it also plans changes. The workflow contains a main-branch apply job
-associated with the GitHub `production` environment. GitHub pauses for approval
-only if that environment has required reviewers or other protection rules
-configured in repository settings.
-
-The repository currently has no Terraform backend block. The apply job's
-`terraform init` therefore uses local state on the ephemeral GitHub runner. A
-remote backend with locking must be configured before using that apply job; the
-production environment must also require approval. For this take-home, do not
-run the apply job or create cloud resources.
+and validation on infrastructure changes. When the remote state bucket and
+Terraform Workload Identity variables are configured, it also plans against the
+GCS backend declared in `infra/versions.tf`. The state bucket must be created
+beforehand and have object versioning enabled. Apply is disabled unless
+`TF_APPLY_ENABLED=true`; when enabled, it runs on a main-branch push and targets
+the GitHub `production-deployment` environment. Required reviewers and branch
+restrictions must be configured on that environment in GitHub settings.
+For this take-home, do not enable apply or create cloud resources.
 
 ## Repository layout and rationale
 
@@ -123,8 +126,9 @@ SVG export together when the implementation changes.
 - Commit-SHA image tags make the deployed image traceable and support rollback
   through Git history.
 - Workload Identity Federation avoids long-lived GCP keys in GitHub Actions.
+- Separate app-publishing and infrastructure identities keep registry write
+  access away from the Terraform deployment role.
 - The diagrams show Terraform-defined resources; no cloud infrastructure has
   been applied for this submission.
-- Remote Terraform state, the production environment approval rule, Artifact
-  Registry reader IAM, and GCP/GitHub identity setup remain deployment
-  prerequisites.
+- A pre-created versioned state bucket, environment protection, Terraform
+  permissions, and GCP/GitHub identity setup remain deployment prerequisites.

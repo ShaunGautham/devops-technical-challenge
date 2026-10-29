@@ -15,23 +15,18 @@ variable "environment" {
   description = "Deployment environment"
   type        = string
   default     = "production"
+
+  validation {
+    condition     = length(var.environment) <= 10 && can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.environment))
+    error_message = "environment must be lowercase, start with a letter, end with a letter or digit, and be at most 10 characters."
+  }
 }
 
 variable "name_prefix" {
   description = "Prefix used to name infrastructure resources"
   type        = string
   default     = "hello-world"
-}
 
-variable "node_count" {
-  description = "Number of GKE worker nodes"
-  type        = number
-  default     = 1
-
-  validation {
-    condition     = var.node_count >= 1
-    error_message = "node_count must be at least 1."
-  }
 }
 
 variable "machine_type" {

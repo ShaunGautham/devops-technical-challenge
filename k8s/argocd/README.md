@@ -6,8 +6,8 @@ Install Argo CD from the pinned Helmfile release definition:
 helmfile -f k8s/argocd/helmfile.yaml sync
 ```
 
-Set `spec.source.repoURL` in `application.yaml` to this repository's clone URL,
-then bootstrap the Application once:
+Verify `spec.source.repoURL` in `application.yaml` matches this repository's
+clone URL, then bootstrap the Application once:
 
 ```sh
 kubectl apply -f k8s/argocd/application.yaml

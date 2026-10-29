@@ -40,7 +40,7 @@
 
   <rect x="285" y="280" width="900" height="385" class="cluster"/>
   <text x="315" y="316" class="card-title">Regional GKE cluster</text>
-  <text x="315" y="340" class="small">Workload Identity enabled · node pool autoscaling 1–2 · namespaces: production, argocd</text>
+  <text x="315" y="340" class="small">Workload Identity · node pool autoscaling 1–2 total · namespaces: production, argocd</text>
 
   <!-- User to workload path -->
   <rect x="65" y="370" width="150" height="88" class="external"/>
@@ -129,12 +129,12 @@
   <rect x="365" y="885" width="250" height="104" class="external"/>
   <text x="490" y="922" text-anchor="middle" class="card-title">GitHub Actions</text>
   <text x="490" y="949" text-anchor="middle" class="small">PR: lint, build, preview</text>
-  <text x="490" y="972" text-anchor="middle" class="small">main: build and publish</text>
+  <text x="490" y="972" text-anchor="middle" class="small">main: build · scan · publish</text>
 
   <rect x="700" y="885" width="190" height="104" class="cloud"/>
-  <text x="795" y="922" text-anchor="middle" class="card-title">Build image</text>
-  <text x="795" y="949" text-anchor="middle" class="small">tagged with full</text>
-  <text x="795" y="972" text-anchor="middle" class="small">commit SHA</text>
+  <text x="795" y="922" text-anchor="middle" class="card-title">Build + Trivy scan</text>
+  <text x="795" y="949" text-anchor="middle" class="small">HIGH / CRITICAL gate</text>
+  <text x="795" y="972" text-anchor="middle" class="small">SHA-tagged image</text>
 
   <rect x="950" y="885" width="170" height="104" class="external"/>
   <text x="1035" y="922" text-anchor="middle" class="card-title">Update overlay</text>
@@ -153,7 +153,7 @@
   <path d="M1035 989 H1140 V710 H820 V642 H800" class="blue"/>
 
   <text x="70" y="1200" class="small">Rollback: revert the image-tag commit. The current configure-ci tag is a placeholder until CI publishes the first SHA-tagged image.</text>
-  <text x="70" y="1230" class="tiny">Registry access note: the GKE node identity needs Artifact Registry Reader; that IAM binding is not currently defined in Terraform.</text>
+  <text x="70" y="1230" class="tiny">Terraform grants the dedicated node identity GKE's baseline role and repository-scoped Artifact Registry Reader access.</text>
 
   <!-- Infrastructure workflow -->
   <rect x="1190" y="765" width="570" height="500" class="panel"/>
@@ -166,8 +166,8 @@
   <rect x="1230" y="1045" width="490" height="130" class="caveat"/>
   <text x="1475" y="1082" text-anchor="middle" class="card-title">Main branch apply job</text>
   <text x="1475" y="1111" text-anchor="middle" class="small">WIF-authenticated Terraform apply</text>
-  <text x="1475" y="1138" text-anchor="middle" class="small">Use only after configuring protected environment</text>
-  <text x="1475" y="1161" text-anchor="middle" class="small">and remote state; not run for this submission</text>
+  <text x="1475" y="1138" text-anchor="middle" class="small">Disabled by default; enable only with remote state</text>
+  <text x="1475" y="1161" text-anchor="middle" class="small">and protected production-deployment environment</text>
   <path d="M1475 1005 V1045" class="edge"/>
   <text x="1220" y="1215" class="tiny">GCP resources shown above are Terraform targets, not deployed resources.</text>
 </svg>
