@@ -99,12 +99,25 @@ resource "google_container_cluster" "primary" {
   }
 }
 
+resource "google_service_account" "gke_nodes" {
+  account_id   = "${var.name_prefix}-${var.environment}-gke-nodes"
+  display_name = "GKE node pool service account"
+}
+
+resource "google_project_iam_member" "gke_nodes_artifact_reader" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.gke_nodes.email}"
+}
 
 
 resource "google_container_node_pool" "primary" {
   name     = "${var.name_prefix}-${var.environment}-node-pool"
   location = var.region
   cluster  = google_container_cluster.primary.name
+  depends_on = [
+  google_project_iam_member.gke_nodes_artifact_reader
+ ]
 
   autoscaling {
     min_node_count = 1
