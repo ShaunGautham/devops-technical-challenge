@@ -51,7 +51,7 @@ resource "google_storage_bucket" "logs" {
 
 resource "google_logging_project_sink" "logs_to_gcs" {
   name        = "${var.name_prefix}-${var.environment}-logs-to-gcs"
-  destination = "://googleapis.com{google_storage_bucket.logs.name}"
+  destination = "storage.googleapis.com/${google_storage_bucket.logs.name}"
 
   filter = "resource.type = \"k8s_container\""
 
@@ -117,7 +117,6 @@ resource "google_container_node_pool" "primary" {
   location = var.region
   cluster  = google_container_cluster.primary.name
 
-  # FIXED: Updated the resource type prefix to correctly target the artifact registry resource
   depends_on = [
     google_project_iam_member.gke_nodes_default_role,
     google_artifact_registry_repository_iam_member.gke_nodes_artifact_reader,
@@ -141,7 +140,7 @@ resource "google_container_node_pool" "primary" {
     service_account = google_service_account.gke_nodes.email
 
     oauth_scopes = [
-      "https://googleapis.com"
+      "https://www.googleapis.com/auth/cloud-platform"
     ]
 
     workload_metadata_config {

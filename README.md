@@ -85,7 +85,7 @@ The Terraform configuration declares a GCS backend. For a real plan, first creat
 
 ### Application CI
 
-`.github/workflows/app-ci.yaml` runs lint/build checks on pushes to `main` and pull requests. On pull requests it also renders the production Kustomize overlay. On pushes to `main`, it authenticates to Google Cloud using Workload Identity Federation, builds and scans an image tagged with the full Git commit SHA, pushes it, updates `k8s/overlays/production/kustomization.yaml`, and renders the updated manifests before committing the image reference.
+`.github/workflows/app-ci.yaml` runs lint/build checks on pushes to `main` and pull requests. On pull requests it also renders the production Kustomize overlay. On pushes to `main`, it authenticates to Google Cloud using Workload Identity Federation, builds and scans an image tagged with the full Git commit SHA, pushes it, updates `k8s/overlays/production/kustomization.yaml`, and renders the updated manifests before committing the image reference. A push that changes only that Kustomize file is filtered out before GitHub allocates a runner; this keeps manifest-only edits from starting an application build. GitHub also suppresses workflow runs caused by the built-in `GITHUB_TOKEN` push.
 
 Configure these GitHub Actions repository variables:
 
@@ -106,7 +106,7 @@ The workflow commits the new image tag to the same Git repository. GitHub's buil
 
 `.github/workflows/infra-ci.yaml` runs `terraform fmt`, initialization, and validation on infrastructure pull requests and pushes. It runs a plan only when the remote state bucket and Terraform WIF variables are configured. The GCS backend is declared in `infra/versions.tf`; create a dedicated state bucket with object versioning before configuring the `TF_STATE_BUCKET` repository variable. The apply job is disabled unless `TF_APPLY_ENABLED` is set to `true`, runs only after a push to `main`, and targets the GitHub `production-deployment` environment. Configure required reviewers and branch restrictions on that environment before enabling apply. Do not apply infrastructure for this assignment.
 
-The plan is generated against the configured remote state. The protected-environment approval is an external GitHub setting; the workflow cannot enforce reviewers unless that environment is configured with required reviewers. Keep apply disabled until the backend and environment protections are ready.
+The plan job previews changes against configured remote state. If apply is enabled, the protected-environment approval happens before the apply job starts; that job then creates a fresh plan and applies it in the same job. It does not apply a saved copy of the earlier plan-job output, so the environment approval gates the apply job rather than approving that exact plan. Required reviewers are an external GitHub setting; configure them on the environment before enabling apply. Keep apply disabled until the backend and environment protections are ready.
 
 ### Argo CD
 
@@ -173,6 +173,10 @@ curl --fail "${SERVICE_URL:?Set SERVICE_URL to the test service URL}/api/health"
 ```
 
 This checks recovery from a single Pod failure; it does not simulate node, zone, or dependency failures. The context-name guard is a precaution, not a substitute for verifying the target cluster.
+
+#### Test behavior
+
+Set `KUBE_CONTEXT`, `CHAOS_CONFIRM`, and `SERVICE_URL`, and verify that the context targets a disposable cluster before running. The script selects and deletes one application Pod, waits up to 180 seconds for the Deployment to recover, then checks `/api/health`. It fails on missing confirmation, failed Kubernetes commands, rollout timeout, or an unhealthy endpoint. The context-name guard is advisory; this exercise tests single-Pod recovery only.
 
 ### Recovery approach
 

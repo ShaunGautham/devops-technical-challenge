@@ -112,7 +112,7 @@ jobs:
           -backend-config="prefix=devops-technical-challenge/infra"
         working-directory: infra
 
-      - name: Create and apply the reviewed configuration
+      - name: Create and apply a fresh plan after approval
         run: |
           terraform plan -input=false -lock-timeout=5m -out=tfplan
           terraform apply -input=false tfplan

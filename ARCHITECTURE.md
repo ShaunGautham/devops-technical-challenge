@@ -75,11 +75,13 @@ renders the updated manifests, and commits the change to Git.
 
 Argo CD reads that Git commit and reconciles the cluster. The GitHub built-in
 `GITHUB_TOKEN` push does not trigger a second workflow run; the generated overlay
-is validated in the original publish run. CI does not hold Kubernetes
-credentials and does not apply manifests to the cluster. Kubernetes pulls the
-image from Artifact Registry and rolls out the updated Deployment. The starting
-`configure-ci` tag in the overlay is a placeholder; a successful first image
-publish must replace it before the application can start successfully.
+is validated in the original publish run. Pushes that change only
+`k8s/overlays/production/kustomization.yaml` are also filtered before a runner is
+allocated. CI does not hold Kubernetes credentials and does not apply manifests
+to the cluster. Kubernetes pulls the image from Artifact Registry and rolls out
+the updated Deployment. The starting `configure-ci` tag in the overlay is a
+placeholder; a successful first image publish must replace it before the
+application can start successfully.
 
 ## Infrastructure workflow and deployment boundary
 
@@ -89,9 +91,11 @@ Terraform Workload Identity variables are configured, it also plans against the
 GCS backend declared in `infra/versions.tf`. The state bucket must be created
 beforehand and have object versioning enabled. Apply is disabled unless
 `TF_APPLY_ENABLED=true`; when enabled, it runs on a main-branch push and targets
-the GitHub `production-deployment` environment. Required reviewers and branch
-restrictions must be configured on that environment in GitHub settings.
-For this take-home, do not enable apply or create cloud resources.
+the GitHub `production-deployment` environment. The approval gates a fresh plan
+and apply in that job; it does not approve a saved plan artifact from the earlier
+preview job. Required reviewers and branch restrictions must be configured on
+that environment in GitHub settings. For this take-home, do not enable apply or
+create cloud resources.
 
 ## Repository layout and rationale
 
