@@ -1,9 +1,7 @@
-
 resource "google_compute_network" "vpc" {
   name                    = "${var.name_prefix}-${var.environment}-vpc"
   auto_create_subnetworks = false
 }
-
 
 resource "google_compute_subnetwork" "subnet" {
   name          = "${var.name_prefix}-${var.environment}-subnet"
@@ -22,14 +20,12 @@ resource "google_compute_subnetwork" "subnet" {
   }
 }
 
-
 resource "google_artifact_registry_repository" "docker" {
   location      = var.region
   repository_id = "hello-world-${var.environment}"
   description   = "Docker images for the Hello World Next.js application"
   format        = "DOCKER"
 }
-
 
 resource "google_storage_bucket" "logs" {
   name                        = "${var.project_id}-${var.environment}-logs"
@@ -53,23 +49,20 @@ resource "google_storage_bucket" "logs" {
   }
 }
 
-
 resource "google_logging_project_sink" "logs_to_gcs" {
   name        = "${var.name_prefix}-${var.environment}-logs-to-gcs"
-  destination = "storage.googleapis.com/${google_storage_bucket.logs.name}"
+  destination = "://googleapis.com{google_storage_bucket.logs.name}"
 
   filter = "resource.type = \"k8s_container\""
 
   unique_writer_identity = true
 }
 
-
 resource "google_storage_bucket_iam_member" "logging_writer" {
   bucket = google_storage_bucket.logs.name
   role   = "roles/storage.objectCreator"
   member = google_logging_project_sink.logs_to_gcs.writer_identity
 }
-
 
 resource "google_container_cluster" "primary" {
   name     = "${var.name_prefix}-${var.environment}-gke"
@@ -119,15 +112,15 @@ resource "google_artifact_registry_repository_iam_member" "gke_nodes_artifact_re
   member     = "serviceAccount:${google_service_account.gke_nodes.email}"
 }
 
-
 resource "google_container_node_pool" "primary" {
   name     = "${var.name_prefix}-${var.environment}-node-pool"
   location = var.region
   cluster  = google_container_cluster.primary.name
 
+  # FIXED: Updated the resource type prefix to correctly target the artifact registry resource
   depends_on = [
     google_project_iam_member.gke_nodes_default_role,
-    google_project_iam_member.gke_nodes_artifact_reader,
+    google_artifact_registry_repository_iam_member.gke_nodes_artifact_reader,
   ]
 
   autoscaling {
@@ -148,7 +141,7 @@ resource "google_container_node_pool" "primary" {
     service_account = google_service_account.gke_nodes.email
 
     oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
+      "https://googleapis.com"
     ]
 
     workload_metadata_config {
